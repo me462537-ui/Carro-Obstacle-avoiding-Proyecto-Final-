@@ -1,0 +1,203 @@
+/*
+   CARRO EVITA OBSTACULOS
+   CONFIGURADO SEGUN TUS LLANTAS
+*/
+
+#include <Servo.h>
+#include <AFMotor.h>
+
+// SENSOR ULTRASONICO
+#define Echo A0
+#define Trig A1
+
+// SERVO
+#define ServoPin 10
+
+// VELOCIDAD
+#define Speed 180
+
+// DISTANCIA MINIMA
+#define MinDistance 25
+
+// CENTRO DEL SERVO
+#define Center 103
+
+Servo servo;
+
+// MOTORES
+AF_DCMotor M1(1);
+AF_DCMotor M2(2);
+AF_DCMotor M3(3);
+AF_DCMotor M4(4);
+
+void setup() {
+
+  Serial.begin(9600);
+
+  pinMode(Trig, OUTPUT);
+  pinMode(Echo, INPUT);
+
+  servo.attach(ServoPin);
+
+  // CENTRAR SERVO
+  servo.write(Center);
+
+  // VELOCIDAD
+  M1.setSpeed(Speed);
+  M2.setSpeed(Speed);
+  M3.setSpeed(Speed);
+  M4.setSpeed(Speed);
+
+  delay(1000);
+}
+
+void loop() {
+
+  int distance = ultrasonic();
+
+  Serial.println(distance);
+
+  // SI DETECTA OBSTACULO
+  if (distance > 0 && distance <= MinDistance) {
+
+    Stop();
+
+    delay(300);
+
+    // MIRAR IZQUIERDA
+    servo.write(170);
+
+    delay(700);
+
+    int leftDistance = ultrasonic();
+
+    delay(200);
+
+    // MIRAR DERECHA
+    servo.write(20);
+
+    delay(700);
+
+    int rightDistance = ultrasonic();
+
+    delay(200);
+
+    // REGRESAR AL CENTRO
+    servo.write(Center);
+
+    delay(400);
+
+    // ELEGIR DIRECCION
+    if (leftDistance > rightDistance) {
+
+      left();
+
+      delay(700);
+
+    } else {
+
+      right();
+
+      delay(700);
+    }
+
+    Stop();
+
+    delay(200);
+
+  } else {
+
+    // AVANZAR
+    forward();
+
+  }
+}
+
+// ==========================
+// SENSOR ULTRASONICO
+// ==========================
+
+int ultrasonic() {
+
+  digitalWrite(Trig, LOW);
+
+  delayMicroseconds(2);
+
+  digitalWrite(Trig, HIGH);
+
+  delayMicroseconds(10);
+
+  digitalWrite(Trig, LOW);
+
+  long duration = pulseIn(Echo, HIGH);
+
+  int distance = duration * 0.034 / 2;
+
+  return distance;
+}
+
+// ==========================
+// ADELANTE
+// ==========================
+
+void forward() {
+
+  // CONFIGURACION SEGUN TUS LLANTAS
+
+  M1.run(BACKWARD);
+  M2.run(FORWARD);
+
+  M3.run(BACKWARD);
+  M4.run(FORWARD);
+}
+
+// ==========================
+// ATRAS
+// ==========================
+
+void backward() {
+
+  M1.run(FORWARD);
+  M2.run(BACKWARD);
+
+  M3.run(FORWARD);
+  M4.run(BACKWARD);
+}
+
+// ==========================
+// GIRAR IZQUIERDA
+// ==========================
+
+void left() {
+
+  M1.run(FORWARD);
+  M2.run(BACKWARD);
+
+  M3.run(BACKWARD);
+  M4.run(FORWARD);
+}
+
+// ==========================
+// GIRAR DERECHA
+// ==========================
+
+void right() {
+
+  M1.run(BACKWARD);
+  M2.run(FORWARD);
+
+  M3.run(FORWARD);
+  M4.run(BACKWARD);
+}
+
+// ==========================
+// DETENER
+// ==========================
+
+void Stop() {
+
+  M1.run(RELEASE);
+  M2.run(RELEASE);
+  M3.run(RELEASE);
+  M4.run(RELEASE);
+}
